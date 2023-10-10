@@ -1,0 +1,15 @@
+Description: Relax timeout limit for riscv64 so tests could finish
+Last-Update: 2022-11-08
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/tests/test_unix.py
++++ b/tests/test_unix.py
+@@ -10,7 +10,7 @@
+ from uvloop import _testbase as tb
+ 
+ 
+-SSL_HANDSHAKE_TIMEOUT = 15.0
++SSL_HANDSHAKE_TIMEOUT = 30.0
+ 
+ 
+ class _TestUnix:

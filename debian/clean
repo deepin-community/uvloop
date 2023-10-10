@@ -1,0 +1,2 @@
+uvloop/loop.c
+uvloop/loop.*.so

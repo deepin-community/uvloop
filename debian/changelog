@@ -1,5 +1,139 @@
-template-repository (1.0-1) unstable; urgency=medium
+uvloop (0.17.0+ds1-2) unstable; urgency=medium
 
-  * Initial release
+  [ Blair Noctis ]
+  * Team upload.
+  * Patch tests/test_unix.py relaxing test timeout so tests could finish,
+    fixes FTBFS on riscv64
+  * d/source/options: extend-diff-ignore .eggs/
 
- -- Tsic404 <liuheng@deepin.org>  Sat, 28 Jan 2023 13:46:49 +0800
+ -- Piotr Ożarowski <piotr@debian.org>  Tue, 08 Nov 2022 16:24:59 +0100
+
+uvloop (0.17.0+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Add python3-pycodestyle and python3-mypy to Build-Depends (used by tests)
+  * Disable test_libuv_api test - uses undefined cython_helper module
+
+ -- Piotr Ożarowski <piotr@debian.org>  Mon, 07 Nov 2022 14:59:49 +0100
+
+uvloop (0.16.0+ds1-2) unstable; urgency=medium
+
+  * Drop the package built for the Python debug interpreter (Closes: #994385)
+
+ -- Paul Wise <pabs@debian.org>  Wed, 24 Nov 2021 15:45:34 +0800
+
+uvloop (0.16.0+ds1-1) unstable; urgency=low
+
+  [ Debian Janitor ]
+  * Refer to common license file for Apache-2.0.
+  * Remove obsolete field Name from debian/upstream/metadata (already present in
+    machine-readable debian/copyright).
+  * Update standards version to 4.5.0, no changes needed.
+
+  [ Ondřej Nový ]
+  * d/control: Update Vcs-* fields with new Debian Python Team Salsa
+    layout.
+
+  [ Sandro Tosi ]
+  * Use the new Debian Python Team contact name and address
+
+  [ Piotr Ożarowski ]
+  * New upstream release
+  * Add a patch to relax Cython dependency
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 29 Aug 2021 19:48:27 +0200
+
+uvloop (0.14.0+ds1-2) unstable; urgency=medium
+
+  * Team upload.
+  * Prevent the hanging tests from being run (Closes: #950165).
+
+ -- Andrej Shadura <andrewsh@debian.org>  Sat, 20 Jun 2020 19:24:07 +0200
+
+uvloop (0.14.0+ds1-1) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Bump Standards-Version to 4.4.1.
+
+  [ Piotr Ożarowski ]
+  * New upstream release
+  * Mark build dependencies required for tests only with <!nocheck>
+
+ -- Piotr Ożarowski <piotr@debian.org>  Tue, 03 Dec 2019 21:20:11 +0100
+
+uvloop (0.11.3+ds1-2) unstable; urgency=medium
+
+  * Team upload.
+  * Use debhelper-compat instead of debian/compat.
+  * Bump Standards-Version to 4.4.0.
+  * d/control: Remove ancient X-Python3-Version field.
+  * d/patches/regen_ssl_crts.patch: Fix FTBFS with new OpenSSL.
+    (Closes: #925847)
+  * Bump debhelper compat level to 12.
+
+ -- Ondřej Nový <onovy@debian.org>  Fri, 02 Aug 2019 10:05:16 +0200
+
+uvloop (0.11.3+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Standards-Version is 4.3.0 (no changes)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Tue, 01 Jan 2019 14:06:49 +0100
+
+uvloop (0.11.2+ds1-1) unstable; urgency=medium
+
+  * Team upload.
+  * Uploading to unstable
+  * New upstream release (Closes: #906164)
+  * Convert git repository from git-dpm to gbp layout
+  * Add python3-psutil to B-D
+  * Bump debhelper compat level to 11
+  * Enable autopkgtest-pkg-python testsuite
+  * d/control: Deduplicate short description of -dbg package
+  * Disable pipe tests - doesn't work inside sbuild
+  * d/copyright: Adapt for new upstream release
+  * Enable all hardening
+  * Standards-Version is 4.2.0 (no changes)
+  * Add upstream metadata
+  * Disable timing/unreliable tests
+
+ -- Ondřej Nový <onovy@debian.org>  Thu, 16 Aug 2018 10:10:13 +0200
+
+uvloop (0.10.1+ds1-1) experimental; urgency=medium
+
+  * New upstream release
+  * Upload to experimental as it requires cython3 >= 0.28
+
+ -- Piotr Ożarowski <piotr@debian.org>  Tue, 12 Jun 2018 23:14:03 +0200
+
+uvloop (0.9.1+ds1-1) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/control: Set Vcs-* to salsa.debian.org
+  * d/copyright: Use https protocol in Format field
+  * d/control: Deprecating priority extra as per policy 4.0.1
+
+  [ Piotr Ożarowski ]
+  * New upstream release
+  * disable tests for -dbg interpreter
+
+ -- Piotr Ożarowski <piotr@debian.org>  Wed, 16 May 2018 12:40:03 +0200
+
+uvloop (0.8.1+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Piotr Ożarowski <piotr@debian.org>  Fri, 15 Sep 2017 12:17:21 +0200
+
+uvloop (0.8.0+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+  * disable generation of -dbgsym packages
+
+ -- Piotr Ożarowski <piotr@debian.org>  Thu, 02 Mar 2017 19:41:57 +0100
+
+uvloop (0.6.7+ds1-1) unstable; urgency=low
+
+  * Initial release (closes: 849195)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Wed, 21 Dec 2016 13:42:47 +0000
