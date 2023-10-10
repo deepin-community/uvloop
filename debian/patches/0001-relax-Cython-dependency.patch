@@ -1,0 +1,21 @@
+From: =?utf-8?q?Piotr_O=C5=BCarowski?= <piotr@debian.org>
+Date: Sun, 29 Aug 2021 19:53:37 +0200
+Subject: relax Cython dependency
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index f48b2a8..da8f563 100644
+--- a/setup.py
++++ b/setup.py
+@@ -21,7 +21,7 @@ from setuptools.command.build_ext import build_ext
+ from setuptools.command.sdist import sdist
+ 
+ 
+-CYTHON_DEPENDENCY = 'Cython(>=0.29.32,<0.30.0)'
++CYTHON_DEPENDENCY = 'Cython>=0.29.32'
+ 
+ # Minimal dependencies required to test uvloop.
+ TEST_DEPENDENCIES = [
