@@ -1,0 +1,21 @@
+Description: Skip tests failing with libuv 1.48.0
+ See https://github.com/libuv/libuv/commit/3530bcc30350d4a6ccf35d2f7b33e23292b9de70
+Bug: https://github.com/MagicStack/uvloop/issues/596
+Author: Graham Inggs <ginggs@debian.org>
+Last-Update: 2024-03-26
+
+--- a/tests/test_dns.py
++++ b/tests/test_dns.py
+@@ -103,10 +103,12 @@
+         self._test_getaddrinfo(None, 0)
+         self._test_getaddrinfo(None, 0, type=socket.SOCK_STREAM)
+ 
++    @unittest.skip("Fails with libuv 1.48.0")
+     def test_getaddrinfo_8(self):
+         self._test_getaddrinfo('', 0)
+         self._test_getaddrinfo('', 0, type=socket.SOCK_STREAM)
+ 
++    @unittest.skip("Fails with libuv 1.48.0")
+     def test_getaddrinfo_9(self):
+         self._test_getaddrinfo(b'', 0)
+         self._test_getaddrinfo(b'', 0, type=socket.SOCK_STREAM)

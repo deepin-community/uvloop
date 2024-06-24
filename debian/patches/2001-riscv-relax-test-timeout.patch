@@ -1,10 +1,19 @@
-Description: Relax timeout limit for riscv64 so tests could finish
+From: =?utf-8?q?Piotr_O=C5=BCarowski?= <piotr@debian.org>
+Date: Sat, 14 Oct 2023 14:39:05 +0200
+Subject: Relax timeout limit for riscv64 so tests could finish
+
+Last-Update: 2022-11-08
+
 Last-Update: 2022-11-08
 ---
-This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+ tests/test_unix.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/test_unix.py b/tests/test_unix.py
+index 8adedee..0579e1d 100644
 --- a/tests/test_unix.py
 +++ b/tests/test_unix.py
-@@ -10,7 +10,7 @@
+@@ -10,7 +10,7 @@ import sys
  from uvloop import _testbase as tb
  
  

@@ -166,9 +166,6 @@ class _TestProcess:
 
         self.loop.run_until_complete(test())
 
-    @unittest.skipIf(sys.version_info < (3, 8, 0),
-                     "3.5 to 3.7 does not support path-like objects "
-                     "in the asyncio subprocess API")
     def test_process_executable_2(self):
         async def test():
             proc = await asyncio.create_subprocess_exec(
@@ -851,8 +848,7 @@ class Test_UV_Process(_TestProcess, tb.UVTestCase):
                 )
                 await proc.communicate()
 
-            uvloop.install()
-            asyncio.run(test())
+            uvloop.run(test())
 
             stdin, stdout, stderr = dups
             (r, w), = pipes
