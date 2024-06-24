@@ -1,3 +1,33 @@
+uvloop (0.19.0+ds1-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload
+
+  [ Graham Inggs ]
+  * Include proposed patch for compatibility with Cython 3 (Closes: #1056893)
+    (LP: #2051150)
+  * Skip tests failing with libuv 1.48.0
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Sun, 31 Mar 2024 23:47:16 +0200
+
+uvloop (0.19.0+ds1-2) unstable; urgency=medium
+
+  * Add 0003-Fix-unit-tests-on-IPv6-only-hosts patch. Thanks to Dale Richards!
+    Closes: #1024079
+
+ -- Piotr Ożarowski <piotr@debian.org>  Thu, 16 Nov 2023 13:16:10 +0100
+
+uvloop (0.19.0+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Piotr Ożarowski <piotr@debian.org>  Thu, 26 Oct 2023 11:00:08 +0200
+
+uvloop (0.18.0+ds1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sat, 14 Oct 2023 14:43:39 +0200
+
 uvloop (0.17.0+ds1-2) unstable; urgency=medium
 
   [ Blair Noctis ]

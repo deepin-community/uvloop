@@ -1,0 +1,425 @@
+From: Dale Richards <dale@dalerichards.net>
+Date: Thu, 16 Nov 2023 13:10:29 +0100
+Subject: Fix unit tests on IPv6-only hosts
+
+This patch modifies the included unit test scripts to complete successfully
+on IPv6-only hosts, as well as IPv4-only hosts and dual-stack hosts.
+---
+ tests/test_aiohttp.py | 30 ++++++++++++++-------
+ tests/test_context.py | 41 +++++++++++++++++++++-------
+ tests/test_regr1.py   |  7 +++--
+ tests/test_signals.py |  8 +++---
+ tests/test_udp.py     | 74 ++++++++++++++++++++++++++++++++++++++-------------
+ uvloop/_testbase.py   | 15 +++++++++--
+ 6 files changed, 129 insertions(+), 46 deletions(-)
+
+diff --git a/tests/test_aiohttp.py b/tests/test_aiohttp.py
+index 514d017..f78b885 100644
+--- a/tests/test_aiohttp.py
++++ b/tests/test_aiohttp.py
+@@ -29,7 +29,13 @@ class _TestAioHTTP:
+ 
+         runner = aiohttp.web.AppRunner(app)
+         self.loop.run_until_complete(runner.setup())
+-        site = aiohttp.web.TCPSite(runner, '0.0.0.0', '0')
++        if tb.has_IPv6 and not tb.has_IPv4:
++            host = '::'
++            url = '[::1]'
++        else:
++            host = '0.0.0.0'
++            url = '127.0.0.1'
++        site = aiohttp.web.TCPSite(runner, host, '0')
+         self.loop.run_until_complete(site.start())
+         port = site._server.sockets[0].getsockname()[1]
+ 
+@@ -37,13 +43,11 @@ class _TestAioHTTP:
+             # Make sure we're using the correct event loop.
+             self.assertIs(asyncio.get_event_loop(), self.loop)
+ 
+-            for addr in (('localhost', port),
+-                         ('127.0.0.1', port)):
+-                async with aiohttp.ClientSession() as client:
+-                    async with client.get('http://{}:{}'.format(*addr)) as r:
+-                        self.assertEqual(r.status, 200)
+-                        result = await r.text()
+-                        self.assertEqual(result, PAYLOAD)
++            async with aiohttp.ClientSession() as client:
++                async with client.get('http://{}:{}'.format(url, port)) as r:
++                    self.assertEqual(r.status, 200)
++                    result = await r.text()
++                    self.assertEqual(result, PAYLOAD)
+ 
+         self.loop.run_until_complete(test())
+         self.loop.run_until_complete(runner.cleanup())
+@@ -82,9 +86,15 @@ class _TestAioHTTP:
+ 
+         runner = aiohttp.web.AppRunner(app)
+         self.loop.run_until_complete(runner.setup())
++        if tb.has_IPv6 and not tb.has_IPv4:
++            host = '::'
++            url = '[::1]'
++        else:
++            host = '0.0.0.0'
++            url = '127.0.0.1'
+         site = aiohttp.web.TCPSite(
+             runner,
+-            '0.0.0.0',
++            host,
+             0,
+             # https://github.com/aio-libs/aiohttp/pull/7188
+             shutdown_timeout=0.1,
+@@ -95,7 +105,7 @@ class _TestAioHTTP:
+         async def client():
+             async with aiohttp.ClientSession() as client:
+                 async with client.ws_connect(
+-                        'http://127.0.0.1:{}'.format(port)) as ws:
++                        'http://{}:{}'.format(url, port)) as ws:
+                     await ws.send_str("hello")
+                     async for msg in ws:
+                         assert msg.data == "hello"
+diff --git a/tests/test_context.py b/tests/test_context.py
+index 0373375..45a3ee3 100644
+--- a/tests/test_context.py
++++ b/tests/test_context.py
+@@ -12,7 +12,6 @@ import weakref
+ 
+ from uvloop import _testbase as tb
+ 
+-
+ class _BaseProtocol(asyncio.BaseProtocol):
+     def __init__(self, cvar, *, loop=None):
+         self.cvar = cvar
+@@ -298,8 +297,12 @@ class _ContextBaseTests(tb.SSLTestCase):
+                         values['sslctx'] = values['client_sslctx'] = None
+ 
+                     if values['use_tcp']:
+-                        values['addr'] = ('127.0.0.1', tb.find_free_port())
+-                        values['family'] = socket.AF_INET
++                        if tb.has_IPv6 and not tb.has_IPv4:
++                            values['addr'] = ('::1', tb.find_free_port(family=socket.AF_INET6))
++                            values['family'] = socket.AF_INET6
++                        else:
++                            values['addr'] = ('127.0.0.1', tb.find_free_port())
++                            values['family'] = socket.AF_INET
+                     else:
+                         values['addr'] = tmp_dir.name + '/test.sock'
+                         values['family'] = socket.AF_UNIX
+@@ -528,14 +531,20 @@ class _ContextBaseTests(tb.SSLTestCase):
+                     cs.connect(addr)
+                     params['sock'] = cs
+                     if use_ssl:
+-                        params['server_hostname'] = '127.0.0.1'
++                        if tb.has_IPv6 and not tb.has_IPv4:
++                            params['server_hostname'] = '::1'
++                        else:
++                            params['server_hostname'] = '127.0.0.1'
+                 elif use_tcp:
+                     params['host'] = addr[0]
+                     params['port'] = addr[1]
+                 else:
+                     params['path'] = addr
+                     if use_ssl:
+-                        params['server_hostname'] = '127.0.0.1'
++                        if tb.has_IPv6 and not tb.has_IPv4:
++                            params['server_hostname'] = '::1'
++                        else:
++                            params['server_hostname'] = '127.0.0.1'
+                 if use_ssl:
+                     params['ssl'] = client_sslctx
+                 await getattr(self.loop, method)(lambda: proto, **params)
+@@ -604,16 +613,22 @@ class _ContextBaseTests(tb.SSLTestCase):
+                 self.assertEqual(inner, "inner")
+ 
+                 cvar.set('start_tls')
++
++                if tb.has_IPv6 and not tb.has_IPv4:
++                    host = '::1'
++                else:
++                    host = '127.0.0.1'
++
+                 transport = await self.loop.start_tls(
+                     proto.transport, proto, client_sslctx,
+-                    server_hostname='127.0.0.1',
++                    server_hostname=host,
+                 )
+ 
+                 if ssl_over_ssl:
+                     cvar.set('start_tls_over_tls')
+                     transport = await self.loop.start_tls(
+                         transport, proto, client_sslctx,
+-                        server_hostname='127.0.0.1',
++                        server_hostname=host,
+                     )
+ 
+                 s = await s
+@@ -722,8 +737,14 @@ class _ContextBaseTests(tb.SSLTestCase):
+     def test_datagram_protocol(self):
+         cvar = contextvars.ContextVar('cvar', default='outer')
+         proto = _DatagramProtocol(cvar, loop=self.loop)
+-        server_addr = ('127.0.0.1', 8888)
+-        client_addr = ('127.0.0.1', 0)
++        if tb.has_IPv6 and not tb.has_IPv4:
++            host = '::1'
++            family = socket.AF_INET6
++        else:
++            host = '127.0.0.1'
++            family = socket.AF_INET
++        server_addr = (host, 8888)
++        client_addr = (host, 0)
+ 
+         async def run():
+             self.assertEqual(cvar.get(), 'outer')
+@@ -739,7 +760,7 @@ class _ContextBaseTests(tb.SSLTestCase):
+                 inner = await proto.connection_made_fut
+                 self.assertEqual(inner, "inner")
+ 
+-                s = socket.socket(socket.AF_INET, type=socket.SOCK_DGRAM)
++                s = socket.socket(family, type=socket.SOCK_DGRAM)
+                 s.bind(client_addr)
+                 s.sendto(b'data', server_addr)
+                 inner = await proto.data_received_fut
+diff --git a/tests/test_regr1.py b/tests/test_regr1.py
+index c502457..aa85bad 100644
+--- a/tests/test_regr1.py
++++ b/tests/test_regr1.py
+@@ -9,7 +9,6 @@ import uvloop
+ 
+ from uvloop import _testbase as tb
+ 
+-
+ class EchoServerProtocol(asyncio.Protocol):
+ 
+     def connection_made(self, transport):
+@@ -42,7 +41,11 @@ def run_server(quin, qout):
+         nonlocal server_loop
+         loop = server_loop = uvloop.new_event_loop()
+         asyncio.set_event_loop(loop)
+-        coro = loop.create_server(EchoServerProtocol, '127.0.0.1', 0)
++        if not tb.has_IPv4:
++            local_addr = '::1'
++        else:
++            local_addr = '127.0.0.1'
++        coro = loop.create_server(EchoServerProtocol, local_addr, 0)
+         server = loop.run_until_complete(coro)
+         addr = server.sockets[0].getsockname()
+         qout.put(addr)
+diff --git a/tests/test_signals.py b/tests/test_signals.py
+index 7e8ed22..cb69280 100644
+--- a/tests/test_signals.py
++++ b/tests/test_signals.py
+@@ -109,7 +109,7 @@ srv = None
+ async def worker():
+     global srv
+     cb = lambda *args: None
+-    srv = await asyncio.start_server(cb, '127.0.0.1', 0)
++    srv = await asyncio.start_server(cb, None, 0)
+     print('READY', flush=True)
+ 
+ loop = """ + self.NEW_LOOP + """
+@@ -148,7 +148,7 @@ srv = None
+ async def worker():
+     global srv
+     cb = lambda *args: None
+-    srv = await asyncio.start_server(cb, '127.0.0.1', 0)
++    srv = await asyncio.start_server(cb, None, 0)
+ 
+ loop = """ + self.NEW_LOOP + """
+ asyncio.set_event_loop(loop)
+@@ -188,7 +188,7 @@ srv = None
+ async def worker():
+     global srv
+     cb = lambda *args: None
+-    srv = await asyncio.start_server(cb, '127.0.0.1', 0)
++    srv = await asyncio.start_server(cb, None, 0)
+     print('READY', flush=True)
+ 
+ def handler_sig(say):
+@@ -241,7 +241,7 @@ srv = None
+ async def worker():
+     global srv
+     cb = lambda *args: None
+-    srv = await asyncio.start_server(cb, '127.0.0.1', 0)
++    srv = await asyncio.start_server(cb, None, 0)
+     print('READY', flush=True)
+ 
+ def handler1():
+diff --git a/tests/test_udp.py b/tests/test_udp.py
+index dd73965..a0d4abe 100644
+--- a/tests/test_udp.py
++++ b/tests/test_udp.py
+@@ -126,10 +126,12 @@ class _TestUDP:
+         server.transport.close()
+         self.loop.run_until_complete(server.done)
+ 
++    @unittest.skipUnless(tb.has_IPv4, 'no IPv4')
+     def test_create_datagram_endpoint_addrs_ipv4(self):
+         self._test_create_datagram_endpoint_addrs(
+             socket.AF_INET, ('127.0.0.1', 0))
+ 
++    @unittest.skipUnless(tb.has_IPv4, 'no IPv4')
+     def test_create_datagram_endpoint_addrs_ipv4_nameaddr(self):
+         self._test_create_datagram_endpoint_addrs(
+             socket.AF_INET, ('localhost', 0))
+@@ -161,7 +163,10 @@ class _TestUDP:
+ 
+     def test_create_datagram_endpoint_sock(self):
+         sock = None
+-        local_address = ('127.0.0.1', 0)
++        if not tb.has_IPv4:
++            local_address = ('::1', 0)
++        else:
++            local_address = ('127.0.0.1', 0)
+         infos = self.loop.run_until_complete(
+             self.loop.getaddrinfo(
+                 *local_address, type=socket.SOCK_DGRAM))
+@@ -252,8 +257,13 @@ class _TestUDP:
+                 self.assertIn(tmp_file2, pr.addrs)
+ 
+     def test_create_datagram_1(self):
+-        server_addr = ('127.0.0.1', 8888)
+-        client_addr = ('127.0.0.1', 0)
++        if not tb.has_IPv4:
++            local_addr = '::1'
++        else:
++            local_addr = '127.0.0.1'
++
++        server_addr = (local_addr, 8888)
++        client_addr = (local_addr, 0)
+ 
+         async def run():
+             server_transport, client_protocol = \
+@@ -326,10 +336,16 @@ class _TestUDP:
+ 
+         self._skip_create_datagram_endpoint_reuse_addr()
+ 
+-        coro = self.loop.create_datagram_endpoint(
+-            lambda: MyDatagramProto(loop=self.loop),
+-            local_addr=('127.0.0.1', 0),
+-            reuse_address=True)
++        if not tb.has_IPv4:
++            coro = self.loop.create_datagram_endpoint(
++                lambda: MyDatagramProto(loop=self.loop),
++                local_addr=('::1', 0),
++                reuse_address=True)
++        else:
++            coro = self.loop.create_datagram_endpoint(
++                lambda: MyDatagramProto(loop=self.loop),
++                local_addr=('127.0.0.1', 0),
++                reuse_address=True)
+ 
+         with self.assertRaises(ValueError):
+             self.loop.run_until_complete(coro)
+@@ -339,10 +355,16 @@ class _TestUDP:
+ 
+         self._skip_create_datagram_endpoint_reuse_addr()
+ 
+-        coro = self.loop.create_datagram_endpoint(
+-            lambda: MyDatagramProto(loop=self.loop),
+-            local_addr=('127.0.0.1', 0),
+-            reuse_address=False)
++        if not tb.has_IPv4:
++            coro = self.loop.create_datagram_endpoint(
++                lambda: MyDatagramProto(loop=self.loop),
++                local_addr=('::1', 0),
++                reuse_address=False)
++        else:
++            coro = self.loop.create_datagram_endpoint(
++                lambda: MyDatagramProto(loop=self.loop),
++                local_addr=('127.0.0.1', 0),
++                reuse_address=False)
+ 
+         with self.assertWarns(DeprecationWarning):
+             tr, pr = self.loop.run_until_complete(coro)
+@@ -362,10 +384,19 @@ class Test_UV_UDP(_TestUDP, tb.UVTestCase):
+                 self.loop.run_until_complete(coro)
+ 
+     def test_udp_sendto_dns(self):
++        if not tb.has_IPv4:
++            addr = '::1'
++            mismatch_addr = '127.0.0.1'
++            sock_family = socket.AF_INET6
++        else:
++            addr = '127.0.0.1'
++            mismatch_addr = '::1'
++            sock_family = socket.AF_INET
++
+         coro = self.loop.create_datagram_endpoint(
+             asyncio.DatagramProtocol,
+-            local_addr=('127.0.0.1', 0),
+-            family=socket.AF_INET)
++            local_addr=(addr, 0),
++            family=sock_family)
+ 
+         s_transport, server = self.loop.run_until_complete(coro)
+ 
+@@ -373,23 +404,30 @@ class Test_UV_UDP(_TestUDP, tb.UVTestCase):
+             s_transport.sendto(b'aaaa', ('example.com', 80))
+ 
+         with self.assertRaisesRegex(ValueError, 'socket family mismatch'):
+-            s_transport.sendto(b'aaaa', ('::1', 80))
++            s_transport.sendto(b'aaaa', (mismatch_addr, 80))
+ 
+         s_transport.close()
+         self.loop.run_until_complete(asyncio.sleep(0.01))
+ 
+     def test_send_after_close(self):
++        if not tb.has_IPv4:
++            addr = '::1'
++            sock_family = socket.AF_INET6
++        else:
++            addr = '127.0.0.1'
++            sock_family = socket.AF_INET
++
+         coro = self.loop.create_datagram_endpoint(
+             asyncio.DatagramProtocol,
+-            local_addr=('127.0.0.1', 0),
+-            family=socket.AF_INET)
++            local_addr=(addr, 0),
++            family=sock_family)
+ 
+         s_transport, _ = self.loop.run_until_complete(coro)
+ 
+         s_transport.close()
+-        s_transport.sendto(b'aaaa', ('127.0.0.1', 80))
++        s_transport.sendto(b'aaaa', (addr, 80))
+         self.loop.run_until_complete(asyncio.sleep(0.01))
+-        s_transport.sendto(b'aaaa', ('127.0.0.1', 80))
++        s_transport.sendto(b'aaaa', (addr, 80))
+ 
+     @unittest.skipUnless(tb.has_IPv6, 'no IPv6')
+     def test_create_datagram_endpoint_addrs_ipv6(self):
+diff --git a/uvloop/_testbase.py b/uvloop/_testbase.py
+index c4a7595..ce6c297 100644
+--- a/uvloop/_testbase.py
++++ b/uvloop/_testbase.py
+@@ -253,9 +253,9 @@ def silence_long_exec_warning():
+         logger.removeFilter(filter)
+ 
+ 
+-def find_free_port(start_from=50000):
++def find_free_port(start_from=50000, family=socket.AF_INET):
+     for port in range(start_from, start_from + 500):
+-        sock = socket.socket()
++        sock = socket.socket(family)
+         with sock:
+             try:
+                 sock.bind(('', port))
+@@ -342,7 +342,18 @@ def has_IPv6():
+             return True
+ 
+ 
++def has_IPv4():
++    server_sock = socket.socket()
++    with server_sock:
++        try:
++            server_sock.bind(('127.0.0.1', 0))
++        except OSError:
++            return False
++        else:
++            return True
++
+ has_IPv6 = has_IPv6()
++has_IPv4 = has_IPv4()
+ 
+ 
+ ###############################################################################

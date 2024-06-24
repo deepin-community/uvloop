@@ -1,32 +1,46 @@
 Metadata-Version: 2.1
 Name: uvloop
-Version: 0.17.0
+Version: 0.19.0
 Summary: Fast implementation of asyncio event loop on top of libuv
-Home-page: http://github.com/MagicStack/uvloop
-Author: Yury Selivanov
-Author-email: yury@magic.io
-License: MIT
-Platform: macOS
-Platform: POSIX
+Author-email: Yury Selivanov <yury@magic.io>
+License: MIT License
+Project-URL: github, https://github.com/MagicStack/uvloop
+Keywords: asyncio,networking
 Classifier: Development Status :: 5 - Production/Stable
 Classifier: Framework :: AsyncIO
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: MacOS :: MacOS X
 Classifier: Programming Language :: Python :: 3 :: Only
-Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python :: 3.8
 Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
-Classifier: License :: OSI Approved :: Apache Software License
-Classifier: License :: OSI Approved :: MIT License
-Classifier: Intended Audience :: Developers
-Requires-Python: >=3.7
-Provides-Extra: docs
-Provides-Extra: test
-Provides-Extra: dev
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: System :: Networking
+Requires-Python: >=3.8.0
+Description-Content-Type: text/x-rst
 License-File: LICENSE-APACHE
 License-File: LICENSE-MIT
+Provides-Extra: test
+Requires-Dist: aiohttp>=3.8.1; python_version < "3.12" and extra == "test"
+Requires-Dist: aiohttp==3.9.0b0; python_version >= "3.12" and extra == "test"
+Requires-Dist: flake8~=5.0; extra == "test"
+Requires-Dist: psutil; extra == "test"
+Requires-Dist: pycodestyle~=2.9.0; extra == "test"
+Requires-Dist: pyOpenSSL~=23.0.0; extra == "test"
+Requires-Dist: mypy>=0.800; extra == "test"
+Requires-Dist: Cython<0.30.0,>=0.29.36; extra == "test"
+Provides-Extra: docs
+Requires-Dist: Sphinx~=4.1.2; extra == "docs"
+Requires-Dist: sphinxcontrib-asyncio~=0.3.0; extra == "docs"
+Requires-Dist: sphinx_rtd_theme~=0.5.2; extra == "docs"
 
-.. image:: https://img.shields.io/github/workflow/status/MagicStack/uvloop/Tests
-    :target: https://github.com/MagicStack/uvloop/actions?query=workflow%3ATests+branch%3Amaster
+.. image:: https://img.shields.io/github/actions/workflow/status/MagicStack/uvloop/tests.yml?branch=master
+    :target: https://github.com/MagicStack/uvloop/actions/workflows/tests.yml?query=branch%3Amaster
 
 .. image:: https://img.shields.io/pypi/v/uvloop.svg
     :target: https://pypi.python.org/pypi/uvloop
@@ -66,7 +80,7 @@ about it.
 Installation
 ------------
 
-uvloop requires Python 3.7 or greater and is available on PyPI.
+uvloop requires Python 3.8 or greater and is available on PyPI.
 Use pip to install it::
 
     $ pip install uvloop
@@ -79,6 +93,27 @@ uvloop with::
 
 Using uvloop
 ------------
+
+As of uvloop 0.18, the preferred way of using it is via the
+``uvloop.run()`` helper function:
+
+
+.. code:: python
+
+    import uvloop
+
+    async def main():
+        # Main entry-point.
+        ...
+
+    uvloop.run(main())
+
+``uvloop.run()`` works by simply configuring ``asyncio.run()``
+to use uvloop, passing all of the arguments to it, such as ``debug``,
+e.g. ``uvloop.run(main(), debug=True)``.
+
+With Python 3.11 and earlier the following alternative
+snippet can be used:
 
 .. code:: python
 
@@ -102,7 +137,7 @@ Using uvloop
 Building From Source
 --------------------
 
-To build uvloop, you'll need Python 3.7 or greater:
+To build uvloop, you'll need Python 3.8 or greater:
 
 1. Clone the repository:
 

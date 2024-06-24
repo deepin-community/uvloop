@@ -1,5 +1,5 @@
-.. image:: https://img.shields.io/github/workflow/status/MagicStack/uvloop/Tests
-    :target: https://github.com/MagicStack/uvloop/actions?query=workflow%3ATests+branch%3Amaster
+.. image:: https://img.shields.io/github/actions/workflow/status/MagicStack/uvloop/tests.yml?branch=master
+    :target: https://github.com/MagicStack/uvloop/actions/workflows/tests.yml?query=branch%3Amaster
 
 .. image:: https://img.shields.io/pypi/v/uvloop.svg
     :target: https://pypi.python.org/pypi/uvloop
@@ -39,7 +39,7 @@ about it.
 Installation
 ------------
 
-uvloop requires Python 3.7 or greater and is available on PyPI.
+uvloop requires Python 3.8 or greater and is available on PyPI.
 Use pip to install it::
 
     $ pip install uvloop
@@ -52,6 +52,27 @@ uvloop with::
 
 Using uvloop
 ------------
+
+As of uvloop 0.18, the preferred way of using it is via the
+``uvloop.run()`` helper function:
+
+
+.. code:: python
+
+    import uvloop
+
+    async def main():
+        # Main entry-point.
+        ...
+
+    uvloop.run(main())
+
+``uvloop.run()`` works by simply configuring ``asyncio.run()``
+to use uvloop, passing all of the arguments to it, such as ``debug``,
+e.g. ``uvloop.run(main(), debug=True)``.
+
+With Python 3.11 and earlier the following alternative
+snippet can be used:
 
 .. code:: python
 
@@ -75,7 +96,7 @@ Using uvloop
 Building From Source
 --------------------
 
-To build uvloop, you'll need Python 3.7 or greater:
+To build uvloop, you'll need Python 3.8 or greater:
 
 1. Clone the repository:
 

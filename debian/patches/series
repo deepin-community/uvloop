@@ -1,2 +1,5 @@
 0001-relax-Cython-dependency.patch
 2001-riscv-relax-test-timeout.patch
+0003-Fix-unit-tests-on-IPv6-only-hosts.patch
+cython3.patch
+libuv1.48.0.patch
